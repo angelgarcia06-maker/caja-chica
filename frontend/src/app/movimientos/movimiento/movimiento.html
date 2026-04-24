@@ -1,0 +1,105 @@
+<div class="dashboard">
+  <header class="header">
+    <div class="header-content">
+      <h1>Módulo de Movimientos</h1>
+      <div class="header-actions">
+        <button class="btn-nav" (click)="irADashboard()">Caja Chica</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="form-section">
+      <h2>Registrar Movimiento</h2>
+
+      <div class="form-group">
+        <label for="caja">Seleccionar Caja</label>
+        <select id="caja" [(ngModel)]="cajaId" (change)="onCajaChange()" (blur)="validarCaja()">
+          <option [ngValue]="null">-- Selecciona una caja --</option>
+          <option *ngFor="let caja of cajas" [ngValue]="caja.id">
+            Caja #{{ caja.id }} — Saldo: S/. {{ caja.saldoActual | number:'1.2-2' }}
+          </option>
+        </select>
+        <span class="field-error" *ngIf="cajaError">{{ cajaError }}</span>
+      </div>
+
+      <div class="form-group" *ngIf="esAdmin">
+        <label>Tipo de Movimiento</label>
+        <div class="tipo-buttons">
+          <button class="btn-tipo" [class.activo-ingreso]="tipo === 'INGRESO'" (click)="tipo = 'INGRESO'">
+            ▲ Ingreso
+          </button>
+          <button class="btn-tipo" [class.activo-egreso]="tipo === 'EGRESO'" (click)="tipo = 'EGRESO'">
+            ▼ Egreso
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="!esAdmin">
+        <label>Tipo de Movimiento</label>
+        <div class="tipo-fijo egreso">
+          ▼ Egreso — Solo puedes registrar gastos
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="monto">Monto (S/.)</label>
+        <input type="number" id="monto" [(ngModel)]="monto" placeholder="Ej: 100.00" min="1" (blur)="validarMonto()"
+          (input)="validarMonto()" />
+        <span class="field-error" *ngIf="montoError">{{ montoError }}</span>
+      </div>
+
+      <div class="form-group">
+        <label for="descripcion">Descripción</label>
+        <input type="text" id="descripcion" [(ngModel)]="descripcion" placeholder="Ej: Compra de útiles"
+          (blur)="validarDescripcion()" (input)="validarDescripcion()" />
+        <span class="field-error" *ngIf="descripcionError">{{ descripcionError }}</span>
+      </div>
+
+      <div class="error-msg" *ngIf="error">{{ error }}</div>
+      <div class="exito-msg" *ngIf="exito">{{ exito }}</div>
+
+      <button class="btn-crear" (click)="registrar()" [disabled]="cargando">
+        {{ cargando ? 'Registrando...' : 'Registrar ' + tipo }}
+      </button>
+    </section>
+
+    <section class="tabla-section">
+      <h2>Historial de Movimientos</h2>
+
+      <div class="sin-datos" *ngIf="movimientos.length === 0">
+        No hay movimientos registrados.
+      </div>
+
+      <table *ngIf="movimientos.length > 0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tipo</th>
+            <th>Monto</th>
+            <th>Descripción</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let mov of movimientos">
+            <td>{{ mov.id }}</td>
+            <td>
+              <span class="badge" [class.badge-ingreso]="mov.tipo === 'INGRESO'"
+                [class.badge-egreso]="mov.tipo === 'EGRESO'">
+                {{ mov.tipo }}
+              </span>
+            </td>
+            <td>S/. {{ mov.monto | number:'1.2-2' }}</td>
+            <td>{{ mov.descripcion }}</td>
+            <td>{{ mov.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Sistema de Control y Auditoría de Gastos de Caja Chica &copy; 2026</p>
+  </footer>
+</div>
