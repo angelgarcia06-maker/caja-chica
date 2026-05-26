@@ -27,7 +27,6 @@ public class AuthController {
     public Map<String, String> login(@RequestBody Usuario request) {
 
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorUsername(request.getUsername());
-
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("Usuario no encontrado");
         }
@@ -38,11 +37,11 @@ public class AuthController {
             throw new RuntimeException("Contraseña incorrecta");
         }
 
-        String token = jwtUtil.generateToken(usuario.getUsername());
+        String token = jwtUtil.generateToken(usuario.getUsername(), usuario.getRol());
 
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
-
+        response.put("rol", usuario.getRol());
         return response;
     }
 }

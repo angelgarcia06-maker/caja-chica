@@ -2,11 +2,13 @@ package com.example.caja_chica.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-@Entity // Le dice a Spring que esta clase es una tabla de BD
+@Entity
 @Table(name = "usuarios")
-@Data   // Genera Getters y Setters automáticamente (gracias a Lombok)
+@Data
 public class Usuario {
 
     @Id
@@ -14,11 +16,13 @@ public class Usuario {
     private Long id;
 
     @NotBlank(message = "El nombre de usuario no puede estar vacío")
-    @Column(unique = true) // No permite usuarios duplicados
+    @Column(unique = true)
     private String username;
 
-    @NotBlank
+    @NotBlank(message = "La contraseña no puede estar vacía")
+    @JsonIgnore
     private String password;
 
-    private String rol; // ADMIN o EMPLEADO
+    @Pattern(regexp = "ADMIN|EMPLEADO", message = "El rol debe ser ADMIN o EMPLEADO")
+    private String rol;
 }
