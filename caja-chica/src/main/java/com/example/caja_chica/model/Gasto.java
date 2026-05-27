@@ -40,4 +40,8 @@ public class Gasto {
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
+
+    @ManyToOne
+    @JoinColumn(name = "presupuesto_id")
+    private PresupuestoArea presupuestoArea;
 }

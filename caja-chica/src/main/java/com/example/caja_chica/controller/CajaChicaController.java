@@ -17,8 +17,8 @@ public class CajaChicaController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public CajaChica crear(@RequestParam BigDecimal montoInicial) {
-        return service.crearCaja(montoInicial);
+    public CajaChica crear(@RequestParam BigDecimal montoInicial, @RequestParam Long departamentoId) {
+        return service.crearCaja(montoInicial, departamentoId);
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('EMPLEADO')")

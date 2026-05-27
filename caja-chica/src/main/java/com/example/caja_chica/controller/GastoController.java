@@ -28,9 +28,10 @@ public class GastoController {
     @PostMapping
     public Gasto registrar(@RequestBody Gasto gasto,
                            @RequestParam Long cajaId,
+                           @RequestParam Long presupuestoId,
                            Authentication authentication) {
         String username = authentication.getName();
-        return gastoService.registrarGasto(gasto, cajaId, username);
+        return gastoService.registrarGasto(gasto, cajaId, presupuestoId, username);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

@@ -6,6 +6,9 @@ import com.example.caja_chica.model.Usuario;
 import com.example.caja_chica.repository.CajaChicaRepository;
 import com.example.caja_chica.repository.GastoRepository;
 import com.example.caja_chica.repository.UsuarioRepository;
+import com.example.caja_chica.model.PresupuestoArea;
+import com.example.caja_chica.repository.PresupuestoAreaRepository;
+import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -23,17 +26,24 @@ public class GastoService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    public Gasto registrarGasto(Gasto gasto, Long cajaId, String username) {
+    @Autowired
+    private PresupuestoAreaRepository presupuestoAreaRepository;
+
+    public Gasto registrarGasto(Gasto gasto, Long cajaId, Long presupuestoId, String username) {
         CajaChica caja = cajaChicaRepository.findById(cajaId)
                 .orElseThrow(() -> new RuntimeException("Caja chica no encontrada"));
 
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        PresupuestoArea presupuesto = presupuestoAreaRepository.findById(presupuestoId)
+                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado"));
+
         gasto.setEstado("PENDIENTE");
         gasto.setFecha(LocalDateTime.now());
         gasto.setCajaChica(caja);
         gasto.setUsuario(usuario);
+        gasto.setPresupuestoArea(presupuesto);
 
         return gastoRepository.save(gasto);
     }
@@ -47,12 +57,20 @@ public class GastoService {
         }
 
         CajaChica caja = gasto.getCajaChica();
+        PresupuestoArea presupuesto = gasto.getPresupuestoArea();
         if (caja.getSaldoActual().compareTo(gasto.getMonto()) < 0) {
             throw new RuntimeException("Saldo insuficiente en la caja chica");
+        }
+        
+        BigDecimal nuevoConsumo = presupuesto.getConsumoActual().add(gasto.getMonto());
+        if (nuevoConsumo.compareTo(presupuesto.getPresupuestoMensual()) > 0) {
+            throw new RuntimeException("Se excede el presupuesto mensual");
         }
 
         caja.setSaldoActual(caja.getSaldoActual().subtract(gasto.getMonto()));
         cajaChicaRepository.save(caja);
+        presupuesto.setConsumoActual(nuevoConsumo);
+        presupuestoAreaRepository.save(presupuesto);
 
         gasto.setEstado("APROBADO");
         return gastoRepository.save(gasto);

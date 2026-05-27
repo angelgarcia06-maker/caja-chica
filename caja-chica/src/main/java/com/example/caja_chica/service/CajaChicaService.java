@@ -2,6 +2,8 @@ package com.example.caja_chica.service;
 
 import com.example.caja_chica.model.CajaChica;
 import com.example.caja_chica.repository.CajaChicaRepository;
+import com.example.caja_chica.model.Departamento;
+import com.example.caja_chica.repository.DepartamentoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.math.BigDecimal;
@@ -13,16 +15,24 @@ public class CajaChicaService {
     @Autowired
     private CajaChicaRepository repository;
 
-    public CajaChica crearCaja(BigDecimal montoInicial) {
+    @Autowired
+    private DepartamentoRepository departamentoRepository;
+
+    public CajaChica crearCaja(BigDecimal montoInicial, Long departamentoId) {
         if (montoInicial == null) {
             throw new RuntimeException("El monto inicial es obligatorio");
         }
         if (montoInicial.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("El monto inicial debe ser mayor a cero");
         }
+        
+        Departamento departamento = departamentoRepository.findById(departamentoId)
+            .orElseThrow(() -> new RuntimeException("Departamento no encontrado"));
+
         CajaChica caja = new CajaChica();
         caja.setMontoInicial(montoInicial);
         caja.setSaldoActual(montoInicial);
+        caja.setDepartamento(departamento);
         return repository.save(caja);
     }
 

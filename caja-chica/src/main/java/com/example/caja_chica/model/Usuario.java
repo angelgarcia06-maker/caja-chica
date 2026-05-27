@@ -25,4 +25,8 @@ public class Usuario {
 
     @Pattern(regexp = "ADMIN|EMPLEADO", message = "El rol debe ser ADMIN o EMPLEADO")
     private String rol;
+    
+    @ManyToOne
+    @JoinColumn(name = "departamento_id")
+    private Departamento departamento;
 }

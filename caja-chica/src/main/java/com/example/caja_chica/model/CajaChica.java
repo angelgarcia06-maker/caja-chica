@@ -20,4 +20,8 @@ public class CajaChica {
     private BigDecimal montoInicial;
 
     private BigDecimal saldoActual;
+
+    @ManyToOne
+    @JoinColumn(name = "departamento_id")
+    private Departamento departamento;
 }
