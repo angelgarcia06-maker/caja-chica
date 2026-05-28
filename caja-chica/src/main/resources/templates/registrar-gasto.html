@@ -1,0 +1,575 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Gasto — Caja Chica</title>
+
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <header class="navbar">
+        <span class="brand">
+            💰 Caja Chica
+        </span>
+        <nav id="navLinks"></nav>
+        <div style="display:flex;align-items:center;">
+            <span class="user-info" id="userLabel"></span>
+            <button class="btn-logout" onclick="cerrarSesion()">
+                Salir
+            </button>
+        </div>
+    </header>
+
+    <main class="page">
+        <h1 class="page-title">
+            Registrar Gasto
+        </h1>
+        <!-- FORMULARIO -->
+        <div class="card">
+            <div class="section-header">
+                <h2>Nuevo Gasto</h2>
+            </div>
+            <div id="msgForm" class="msg ok"></div>
+            <!-- DATOS DEL ÁREA -->
+            <div class="form-grid" style="margin-bottom:1rem;">
+                <div class="form-group">
+                    <label>Tu Área</label>
+                    <input type="text" id="areaNombre" readonly style="background:var(--gris-100); cursor:not-allowed;">
+                </div>
+
+                
+                <div class="form-group">
+                    <label for="cajaId">
+                        Caja del Área
+                    </label>
+
+                    <select id="cajaId">
+
+                        <option value="">
+                            Cargando cajas...
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <!-- PRESUPUESTO -->
+                <div class="form-group">
+
+                    <label for="presupuestoId">
+                        Presupuesto del Mes
+                    </label>
+
+                    <select id="presupuestoId">
+
+                        <option value="">
+                            Cargando presupuesto...
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+            <!-- FORMULARIO GASTO -->
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="categoria">
+                        Categoría
+                    </label>
+
+                    <input type="text" id="categoria" placeholder="Ej: Transporte, Materiales">
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="monto">
+                        Monto (S/.)
+                    </label>
+
+                    <input type="number" id="monto" placeholder="0.00" min="0.01" step="0.01">
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="descripcion">
+                        Descripción
+                    </label>
+
+                    <input type="text" id="descripcion" placeholder="Detalle del gasto">
+
+                </div>
+
+                <!-- COMPROBANTE -->
+                <div class="form-group">
+
+                    <label for="archivo">
+                        Comprobante
+                    </label>
+
+                    <input type="file" id="archivo" accept=".jpg,.jpeg,.png,.pdf">
+
+                </div>
+
+            </div>
+
+            <!-- BOTONES -->
+            <div style="display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem;">
+
+                <button class="btn btn-primary" onclick="handleRegistrar()">
+
+                    + Registrar Gasto
+
+                </button>
+
+                <button class="btn btn-secondary" onclick="limpiarFormulario()">
+
+                    Limpiar
+
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- MIS GASTOS -->
+        <div class="card">
+
+            <div class="section-header">
+
+                <h2>
+                    Mis Gastos Recientes
+                </h2>
+
+                <a href="/view/gastos" class="btn btn-secondary"
+                    style="font-size:.8rem; padding:.4rem .9rem; text-decoration:none;">
+
+                    Ver todos →
+
+                </a>
+
+            </div>
+
+            <div id="msgTabla" class="msg error"></div>
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>ID</th>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="tablaGastos">
+
+                        <tr>
+
+                            <td colspan="5" style="text-align:center; color:var(--texto-soft); padding:2rem;">
+
+                                Cargando...
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="/js/api.js"></script>
+
+    <script>
+
+        // VALIDAR LOGIN
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            localStorage.clear();
+            window.location.href = "/login";
+        }
+
+        // DATOS USUARIO
+        const ROL = localStorage.getItem("rol");
+
+        const USUARIO_ID = localStorage.getItem("id");
+
+        const DEPTO_ID = localStorage.getItem("departamentoId");
+
+        const DEPTO_NOMBRE =
+            localStorage.getItem("departamentoNombre");
+
+        // SOLO EMPLEADO
+        if (ROL !== "EMPLEADO") {
+            window.location.href = "/view/dashboard";
+        }
+
+        // USER INFO
+        document.getElementById("userLabel").textContent =
+            localStorage.getItem("username") || "";
+
+        // NAVBAR
+        document.getElementById("navLinks").innerHTML = `
+
+        <a href="/view/dashboard">
+            Dashboard
+        </a>
+
+        <a href="/view/registrar-gasto" class="active">
+            Registrar Gasto
+        </a>
+
+        <a href="/view/gastos">
+            Mis Gastos
+        </a>
+
+    `;
+
+        // LOGOUT
+        function cerrarSesion() {
+
+            localStorage.clear();
+
+            window.location.href = "/login";
+        }
+
+        // INIT
+        async function init() {
+
+            document.getElementById("areaNombre").value =
+                DEPTO_NOMBRE || "Sin área asignada";
+
+            if (!DEPTO_ID) {
+
+                mostrarMsg(
+                    "msgForm",
+                    "No tienes un área asignada.",
+                    false
+                );
+
+                return;
+            }
+
+            try {
+
+                // ===============================
+                // CARGAR CAJAS DEL ÁREA
+                // ===============================
+
+                const cajas = await listarCajas();
+
+                const cajasDepto = cajas.filter(
+                    c => c.departamento?.id == DEPTO_ID
+                );
+
+                const selectCaja =
+                    document.getElementById("cajaId");
+
+                if (!cajasDepto.length) {
+
+                    selectCaja.innerHTML =
+                        `<option value="">Sin cajas disponibles</option>`;
+
+                    mostrarMsg(
+                        "msgForm",
+                        "Tu área no tiene cajas registradas.",
+                        false
+                    );
+
+                    return;
+                }
+
+                selectCaja.innerHTML = cajasDepto.map(c => `
+
+                <option value="${c.id}">
+
+                    Caja #${c.id}
+                    — Saldo S/. ${parseFloat(c.saldoActual || 0).toFixed(2)}
+
+                </option>
+
+            `).join("");
+
+                // ===============================
+                // CARGAR PRESUPUESTOS
+                // ===============================
+
+                const presupuestos =
+                    await listarPresupuestos();
+
+                const presupuestosDepto =
+                    presupuestos.filter(
+                        p => p.departamento?.id == DEPTO_ID
+                    );
+
+                const selectPresupuesto =
+                    document.getElementById("presupuestoId");
+
+                if (!presupuestosDepto.length) {
+
+                    selectPresupuesto.innerHTML =
+                        `<option value="">Sin presupuesto</option>`;
+
+                    mostrarMsg(
+                        "msgForm",
+                        "Tu área no tiene presupuesto asignado.",
+                        false
+                    );
+
+                } else {
+
+                    selectPresupuesto.innerHTML =
+                        presupuestosDepto.map(p => `
+
+                        <option value="${p.id}">
+
+                            ${p.mes}
+                            — S/. ${parseFloat(p.presupuestoMensual || 0).toFixed(2)}
+
+                        </option>
+
+                    `).join("");
+                }
+
+            } catch (err) {
+
+                mostrarMsg(
+                    "msgForm",
+                    "Error al cargar datos.",
+                    false
+                );
+            }
+
+            // CARGAR GASTOS
+            await cargarMisGastos();
+        }
+
+        // MIS GASTOS
+        async function cargarMisGastos() {
+
+            try {
+
+                const gastos =
+                    await listarMisGastos(USUARIO_ID);
+
+                const tbody =
+                    document.getElementById("tablaGastos");
+
+                const recientes =
+                    gastos.slice(-5).reverse();
+
+                if (!recientes.length) {
+
+                    tbody.innerHTML = `
+
+                    <tr>
+
+                        <td colspan="5"
+                            style="text-align:center;
+                                   color:var(--texto-soft);
+                                   padding:2rem;">
+
+                            Sin gastos registrados
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+                    return;
+                }
+
+                tbody.innerHTML = recientes.map(g => {
+
+                    const estado = g.estado || "PENDIENTE";
+
+                    const badge =
+                        estado === "APROBADO"
+                            ? "badge-aprobado"
+                            : estado === "RECHAZADO"
+                                ? "badge-rechazado"
+                                : "badge-pendiente";
+
+                    return `
+
+                    <tr>
+
+                        <td style="font-family:monospace;">
+                            ${g.id}
+                        </td>
+
+                        <td>
+                            ${g.descripcion || "—"}
+                        </td>
+
+                        <td>
+                            ${g.categoria || "—"}
+                        </td>
+
+                        <td style="font-family:monospace;">
+                            S/. ${parseFloat(g.monto || 0).toFixed(2)}
+                        </td>
+
+                        <td>
+                            <span class="badge ${badge}">
+                                ${estado}
+                            </span>
+                        </td>
+
+                    </tr>
+
+                `;
+
+                }).join("");
+
+            } catch (err) {
+
+                mostrarMsg(
+                    "msgTabla",
+                    "Error al cargar gastos.",
+                    false
+                );
+            }
+        }
+
+        // REGISTRAR GASTO
+        async function handleRegistrar() {
+
+            const cajaId =
+                document.getElementById("cajaId").value;
+
+            const presupuestoId =
+                document.getElementById("presupuestoId").value;
+
+            const categoria =
+                document.getElementById("categoria").value.trim();
+
+            const monto =
+                document.getElementById("monto").value;
+
+            const descripcion =
+                document.getElementById("descripcion").value.trim();
+
+            const archivo =
+                document.getElementById("archivo").files[0];
+
+            // VALIDACIONES
+            if (!cajaId) {
+                mostrarMsg("msgForm", "Selecciona una caja.", false);
+                return;
+            }
+
+            if (!presupuestoId) {
+                mostrarMsg("msgForm", "No hay presupuesto.", false);
+                return;
+            }
+
+            if (!categoria || !monto || !descripcion) {
+                mostrarMsg("msgForm", "Completa todos los campos.", false);
+                return;
+            }
+
+            if (parseFloat(monto) <= 0) {
+                mostrarMsg("msgForm", "Monto inválido.", false);
+                return;
+            }
+
+            try {
+
+                // REGISTRAR
+                const gasto = await registrarGasto(
+                    {
+                        descripcion,
+                        monto: parseFloat(monto),
+                        categoria
+                    },
+                    cajaId,
+                    presupuestoId
+                );
+
+                // SUBIR COMPROBANTE
+                if (archivo) {
+                    await subirComprobante(gasto.id, archivo);
+                }
+
+                mostrarMsg(
+                    "msgForm",
+                    "Gasto registrado correctamente.",
+                    true
+                );
+
+                limpiarFormulario();
+
+                await cargarMisGastos();
+
+            } catch (err) {
+
+                mostrarMsg(
+                    "msgForm",
+                    err.message || "Error al registrar gasto.",
+                    false
+                );
+            }
+        }
+
+        // LIMPIAR
+        function limpiarFormulario() {
+
+            document.getElementById("categoria").value = "";
+
+            document.getElementById("monto").value = "";
+
+            document.getElementById("descripcion").value = "";
+
+            document.getElementById("archivo").value = "";
+        }
+
+        // MENSAJES
+        function mostrarMsg(id, texto, ok) {
+
+            const el = document.getElementById(id);
+
+            el.textContent = texto;
+
+            el.className =
+                "msg " + (ok ? "ok" : "error") + " show";
+
+            setTimeout(() => {
+                el.classList.remove("show");
+            }, 5000);
+        }
+
+        // START
+        init();
+
+    </script>
+
+</body>
+
+</html>
+```

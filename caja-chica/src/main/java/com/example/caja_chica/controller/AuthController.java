@@ -42,6 +42,12 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
         response.put("rol", usuario.getRol());
+        response.put("id", usuario.getId().toString());
+        response.put("username", usuario.getUsername());
+        response.put("departamentoId",
+                usuario.getDepartamento() != null ? usuario.getDepartamento().getId().toString() : "");
+        response.put("departamentoNombre",
+                usuario.getDepartamento() != null ? usuario.getDepartamento().getNombre() : "");
         return response;
     }
 }
