@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presupuesto — Caja Chica</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="navbar">
+    <span class="brand">💰 Caja Chica</span>
+    <nav id="navLinks"></nav>
+    <div style="display:flex;align-items:center;">
+        <span class="user-info" id="userLabel"></span>
+        <button class="btn-logout" onclick="cerrarSesion()">Salir</button>
+    </div>
+</header>
+
+<main class="page">
+    <h1 class="page-title">Presupuesto por Área</h1>
+
+    <div id="cardAdmin" style="display:none;">
+        <div class="card">
+            <div class="section-header"><h2>Nuevo Departamento</h2></div>
+            <div id="msgDepto" class="msg ok"></div>
+            <div style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                <div class="form-group" style="flex:1; min-width:200px;">
+                    <label for="nombreDepto">Nombre del departamento</label>
+                    <input type="text" id="nombreDepto" placeholder="Ej: Logística, Contabilidad">
+                </div>
+                <button class="btn btn-primary" onclick="handleCrearDepto()">+ Crear</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-header"><h2>Asignar Presupuesto Mensual</h2></div>
+            <div id="msgPresupuesto" class="msg ok"></div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="deptoId">Departamento</label>
+                    <select id="deptoId"><option value="">Selecciona departamento</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="mes">Mes (no puede ser pasado)</label>
+                    <input type="month" id="mes">
+                </div>
+                <div class="form-group">
+                    <label for="presupuestoMensual">Presupuesto (S/.)</label>
+                    <input type="number" id="presupuestoMensual" placeholder="0.00" min="0" step="0.01">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="handleCrearPresupuesto()">+ Asignar Presupuesto</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h2>Presupuestos Registrados</h2>
+            <button class="btn btn-secondary" onclick="cargarPresupuestos()" style="font-size:.8rem; padding:.4rem .9rem;">↻ Actualizar</button>
+        </div>
+        <div id="msgTabla" class="msg error"></div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Departamento</th>
+                        <th>Mes</th>
+                        <th>Presupuesto</th>
+                        <th>Consumo</th>
+                        <th>Disponible</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaPresupuestos">
+                    <tr><td colspan="7" style="text-align:center; color:var(--texto-soft); padding:2rem;">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h2>Departamentos</h2>
+            <button class="btn btn-secondary" onclick="cargarDepartamentos()" style="font-size:.8rem; padding:.4rem .9rem;">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Nombre</th></tr>
+                </thead>
+                <tbody id="tablaDeptos">
+                    <tr><td colspan="2" style="text-align:center; color:var(--texto-soft); padding:2rem;">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script src="/js/api.js"></script>
+<script>
+    if (!localStorage.getItem("token")) window.location.href = "/login";
+    const ROL = localStorage.getItem("rol");
+    document.getElementById("userLabel").textContent = localStorage.getItem("username") || "";
+
+    document.getElementById("navLinks").innerHTML = `
+        <a href="/view/dashboard">Dashboard</a>
+        <a href="/view/gastos">Gastos</a>
+        ${ROL === "ADMIN" ? '<a href="/view/presupuesto" class="active">Presupuesto</a><a href="/view/usuarios">Usuarios</a>' : ''}
+    `;
+
+    const hoy = new Date();
+    const mesMinimo = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById("mes") && (document.getElementById("mes").min = mesMinimo);
+
+    if (ROL === "ADMIN") document.getElementById("cardAdmin").style.display = "block";
+
+    function cerrarSesion() { localStorage.clear(); window.location.href = "/login"; }
+
+    async function init() {
+        await cargarDepartamentos();
+        await cargarPresupuestos();
+    }
+
+    async function cargarDepartamentos() {
+        try {
+            const deptos = await listarDepartamentos();
+            const tbody  = document.getElementById("tablaDeptos");
+            if (ROL === "ADMIN") {
+                document.getElementById("deptoId").innerHTML =
+                    `<option value="">Selecciona departamento</option>` +
+                    deptos.map(d => `<option value="${d.id}">${d.nombre}</option>`).join("");
+            }
+            tbody.innerHTML = !deptos.length
+                ? `<tr><td colspan="2" style="text-align:center; color:var(--texto-soft); padding:2rem;">Sin departamentos</td></tr>`
+                : deptos.map(d => `<tr><td style="font-family:monospace; color:var(--texto-soft);">${d.id}</td><td>${d.nombre}</td></tr>`).join("");
+        } catch (err) { mostrarMsg("msgTabla", "Error al cargar departamentos.", false); }
+    }
+
+    async function cargarPresupuestos() {
+        try {
+            const lista = await listarPresupuestos();
+            const tbody = document.getElementById("tablaPresupuestos");
+            if (!lista.length) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--texto-soft); padding:2rem;">Sin presupuestos registrados</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = lista.map(p => {
+                const presupuesto = parseFloat(p.presupuestoMensual || 0);
+                const consumo     = parseFloat(p.consumoActual || 0);
+                const disponible  = presupuesto - consumo;
+                const porcentaje  = presupuesto > 0 ? (consumo / presupuesto * 100).toFixed(0) : 0;
+                const estado      = disponible <= 0
+                    ? `<span class="badge badge-rechazado">Agotado</span>`
+                    : porcentaje >= 80
+                    ? `<span class="badge badge-pendiente">Crítico ${porcentaje}%</span>`
+                    : `<span class="badge badge-aprobado">OK ${porcentaje}%</span>`;
+                return `
+                    <tr>
+                        <td style="font-family:monospace; color:var(--texto-soft);">${p.id}</td>
+                        <td>${p.departamento?.nombre || "—"}</td>
+                        <td>${p.mes || "—"}</td>
+                        <td style="font-family:monospace;">S/. ${presupuesto.toFixed(2)}</td>
+                        <td style="font-family:monospace;">S/. ${consumo.toFixed(2)}</td>
+                        <td style="font-family:monospace;">S/. ${disponible.toFixed(2)}</td>
+                        <td>${estado}</td>
+                    </tr>`;
+            }).join("");
+        } catch (err) { mostrarMsg("msgTabla", "Error al cargar presupuestos.", false); }
+    }
+
+    async function handleCrearDepto() {
+        const nombre = document.getElementById("nombreDepto").value.trim();
+        if (!nombre) { mostrarMsg("msgDepto", "Ingresa el nombre del departamento.", false); return; }
+        try {
+            await crearDepartamento(nombre);
+            document.getElementById("nombreDepto").value = "";
+            mostrarMsg("msgDepto", "Departamento creado correctamente.", true);
+            await cargarDepartamentos();
+        } catch (err) { mostrarMsg("msgDepto", "Error al crear el departamento.", false); }
+    }
+
+    async function handleCrearPresupuesto() {
+        const deptoId            = document.getElementById("deptoId").value;
+        const mes                = document.getElementById("mes").value;
+        const presupuestoMensual = document.getElementById("presupuestoMensual").value;
+
+        if (!deptoId || !mes || !presupuestoMensual) {
+            mostrarMsg("msgPresupuesto", "Completa todos los campos.", false); return;
+        }
+
+        // Validar que no sea mes pasado
+        if (mes < mesMinimo) {
+            mostrarMsg("msgPresupuesto", "No puedes asignar presupuesto a un mes pasado.", false); return;
+        }
+
+        try {
+            await crearPresupuesto(deptoId, mes, presupuestoMensual);
+            document.getElementById("deptoId").selectedIndex    = 0;
+            document.getElementById("mes").value                = "";
+            document.getElementById("presupuestoMensual").value = "";
+            mostrarMsg("msgPresupuesto", "Presupuesto asignado correctamente.", true);
+            await cargarPresupuestos();
+        } catch (err) { mostrarMsg("msgPresupuesto", "Error al asignar presupuesto.", false); }
+    }
+
+    function mostrarMsg(id, texto, ok) {
+        const el = document.getElementById(id);
+        el.textContent = texto;
+        el.className = "msg " + (ok ? "ok" : "error") + " show";
+        setTimeout(() => el.classList.remove("show"), 4000);
+    }
+
+    init();
+</script>
+</body>
+</html>

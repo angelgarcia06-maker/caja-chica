@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Caja Chica</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<header class="navbar">
+    <span class="brand">💰 Caja Chica</span>
+    <nav id="navLinks"></nav>
+    <div style="display:flex;align-items:center;">
+        <span class="user-info" id="userLabel"></span>
+        <button class="btn-logout" onclick="cerrarSesion()">Salir</button>
+    </div>
+</header>
+
+<main class="page">
+    <h1 class="page-title">Dashboard</h1>
+    <div id="msg" class="msg error"></div>
+
+    <div class="cards-grid">
+        <div class="card stat-card">
+            <div class="label">Cajas registradas</div>
+            <div class="value azul" id="statCajas">—</div>
+        </div>
+        <div class="card stat-card">
+            <div class="label">Total gastos</div>
+            <div class="value amarillo" id="statGastos">—</div>
+        </div>
+        <div class="card stat-card">
+            <div class="label">Gastos pendientes</div>
+            <div class="value rojo" id="statPendientes">—</div>
+        </div>
+        <div class="card stat-card">
+            <div class="label" id="labelSaldo">Saldo disponible</div>
+            <div class="value verde" id="statSaldo">—</div>
+        </div>
+    </div>
+
+    <div class="card" id="cardCrearCaja" style="display:none;">
+        <div class="section-header">
+            <h2>Nueva Caja Chica</h2>
+        </div>
+        <div id="msgCaja" class="msg ok"></div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="deptoIdCaja">Departamento</label>
+                <select id="deptoIdCaja"></select>
+            </div>
+            <div class="form-group">
+                <label for="montoInicial">Monto Inicial (S/.)</label>
+                <input type="number" id="montoInicial" placeholder="Ej: 500.00" min="0" step="0.01">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="handleCrearCaja()">+ Crear Caja</button>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h2 id="tituloCajas">Cajas Registradas</h2>
+            <button class="btn btn-secondary" onclick="cargarDashboard()" style="font-size:.8rem; padding:.4rem .9rem;">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Departamento</th>
+                        <th>Monto Inicial</th>
+                        <th>Saldo Actual</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCajas">
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:var(--texto-soft); padding:2rem;">Cargando...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script src="/js/api.js"></script>
+<script>
+    if (!localStorage.getItem("token")) window.location.href = "/login";
+
+    const ROL = localStorage.getItem("rol");
+    const DEPTO_ID = localStorage.getItem("departamentoId");
+    const DEPTO_NOMBRE = localStorage.getItem("departamentoNombre");
+
+    document.getElementById("userLabel").textContent = localStorage.getItem("username") || "";
+
+    document.getElementById("navLinks").innerHTML = `
+        <a href="/view/dashboard" class="active">Dashboard</a>
+        ${ROL === "EMPLEADO" ? '<a href="/view/registrar-gasto">Registrar Gasto</a>' : ''}
+        <a href="/view/gastos">Gastos</a>
+        ${ROL === "ADMIN" ? '<a href="/view/presupuesto">Presupuesto</a><a href="/view/usuarios">Usuarios</a>' : ''}
+    `;
+
+    function cerrarSesion() {
+        localStorage.clear();
+        window.location.href = "/login";
+    }
+
+    async function cargarDashboard() {
+        try {
+            const cajas = await listarCajas();
+            const cajasFiltradas = ROL === "EMPLEADO"
+                ? cajas.filter(c => c.departamento?.id == DEPTO_ID)
+                : cajas;
+
+            document.getElementById("statCajas").textContent = cajasFiltradas.length;
+            const saldoTotal = cajasFiltradas.reduce((sum, c) => sum + parseFloat(c.saldoActual || 0), 0);
+            document.getElementById("statSaldo").textContent = "S/. " + saldoTotal.toFixed(2);
+
+            if (ROL === "EMPLEADO" && DEPTO_NOMBRE) {
+                document.getElementById("tituloCajas").textContent = `Caja — ${DEPTO_NOMBRE}`;
+                document.getElementById("labelSaldo").textContent = "Saldo de tu caja";
+            }
+
+            let gastos = [];
+            if (ROL === "ADMIN") {
+                document.getElementById("cardCrearCaja").style.display = "block";
+                gastos = await listarGastos();
+
+                const deptos = await listarDepartamentos();
+                const select = document.getElementById("deptoIdCaja");
+                select.innerHTML = `<option value="">Selecciona departamento</option>` +
+                    deptos.map(d => `<option value="${d.id}">${d.nombre}</option>`).join("");
+            }
+
+            document.getElementById("statGastos").textContent = gastos.length;
+            document.getElementById("statPendientes").textContent = gastos.filter(g => g.estado === "PENDIENTE").length;
+
+            renderCajas(cajasFiltradas);
+        } catch (err) {
+            mostrarMsg("msg", "Error al cargar dashboard", false);
+        }
+    }
+
+    function renderCajas(cajas) {
+        const tbody = document.getElementById("tablaCajas");
+        if (!cajas.length) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--texto-soft);">
+                ${ROL === "EMPLEADO" ? "Tu área aún no tiene caja asignada." : "No hay cajas registradas"}
+            </td></tr>`;
+            return;
+        }
+        tbody.innerHTML = cajas.map(c => `
+            <tr>
+                <td style="font-family:monospace;">#${c.id}</td>
+                <td>${c.departamento?.nombre || "—"}</td>
+                <td>S/. ${parseFloat(c.montoInicial).toFixed(2)}</td>
+                <td>S/. ${parseFloat(c.saldoActual).toFixed(2)}</td>
+                <td><span class="badge ${parseFloat(c.saldoActual) > 0 ? 'badge-aprobado' : 'badge-rechazado'}">
+                    ${parseFloat(c.saldoActual) > 0 ? 'Activa' : 'Sin saldo'}
+                </span></td>
+            </tr>
+        `).join("");
+    }
+
+    async function handleCrearCaja() {
+        const deptoId = document.getElementById("deptoIdCaja").value;
+        const monto = document.getElementById("montoInicial").value;
+
+        if (!deptoId || !monto || parseFloat(monto) <= 0) {
+            mostrarMsg("msgCaja", "Completa todos los campos correctamente", false);
+            return;
+        }
+
+        try {
+            await crearCaja(monto, deptoId);
+            mostrarMsg("msgCaja", "Caja creada exitosamente", true);
+            document.getElementById("montoInicial").value = "";
+            cargarDashboard();
+        } catch (err) {
+            mostrarMsg("msgCaja", err.message || "Error al crear caja", false);
+        }
+    }
+
+    function mostrarMsg(id, texto, ok) {
+        const el = document.getElementById(id);
+        el.textContent = texto;
+        el.className = `msg ${ok ? "ok" : "error"} show`;
+        setTimeout(() => el.classList.remove("show"), 4000);
+    }
+
+    cargarDashboard();
+</script>
+
+</body>
+</html>
