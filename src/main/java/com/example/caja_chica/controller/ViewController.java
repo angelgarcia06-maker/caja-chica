@@ -180,6 +180,7 @@ public class ViewController {
                                   @RequestParam String categoria,
                                   @RequestParam BigDecimal monto,
                                   @RequestParam String descripcion,
+                                  @RequestParam(required = false) org.springframework.web.multipart.MultipartFile archivo,
                                   Authentication auth,
                                   RedirectAttributes ra) {
         try {
@@ -187,7 +188,24 @@ public class ViewController {
             gasto.setCategoria(categoria);
             gasto.setMonto(monto);
             gasto.setDescripcion(descripcion);
-            gastoService.registrarGasto(gasto, cajaId, presupuestoId, auth.getName());
+            Gasto guardado = gastoService.registrarGasto(gasto, cajaId, presupuestoId, auth.getName());
+
+            // Subir comprobante si se adjuntó archivo
+            if (archivo != null && !archivo.isEmpty()) {
+                String tipo = archivo.getContentType();
+                if (tipo != null && (tipo.equals("image/jpeg") || tipo.equals("image/png") || tipo.equals("application/pdf"))) {
+                    java.io.File carpeta = new java.io.File("comprobantes/");
+                    if (!carpeta.exists()) carpeta.mkdirs();
+                    String nombreArchivo = java.util.UUID.randomUUID() + "_" + archivo.getOriginalFilename();
+                    java.nio.file.Path ruta = java.nio.file.Paths.get("comprobantes/" + nombreArchivo);
+                    java.nio.file.Files.write(ruta, archivo.getBytes());
+                    gastoService.agregarComprobante(guardado.getId(), ruta.toString());
+                } else {
+                    ra.addFlashAttribute("exito", "Gasto registrado. Comprobante ignorado (formato no válido).");
+                    return "redirect:/registrar-gasto";
+                }
+            }
+
             ra.addFlashAttribute("exito", "Gasto registrado correctamente.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
@@ -256,6 +274,29 @@ public class ViewController {
             }
             usuarioService.registrarUsuario(u);
             ra.addFlashAttribute("exito", "Usuario registrado correctamente.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/usuarios";
+    }
+
+    @PostMapping("/usuarios/{id}/editar")
+    public String editarUsuario(@PathVariable Long id,
+                                 @RequestParam String username,
+                                 @RequestParam(required = false) String password,
+                                 @RequestParam String rol,
+                                 @RequestParam(required = false) Long deptoId,
+                                 RedirectAttributes ra) {
+        try {
+            Usuario u = new Usuario();
+            u.setUsername(username);
+            u.setPassword(password);
+            u.setRol(rol);
+            if (deptoId != null) {
+                u.setDepartamento(departamentoRepository.findById(deptoId).orElse(null));
+            }
+            usuarioService.actualizarUsuario(id, u);
+            ra.addFlashAttribute("exito", "Usuario actualizado correctamente.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
         }

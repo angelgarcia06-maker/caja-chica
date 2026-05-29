@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gastos — Caja Chica</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<header class="navbar">
+    <span class="brand">💰 Caja Chica</span>
+    <nav>
+        <a th:href="@{/dashboard}" th:classappend="${paginaActiva == 'dashboard'} ? 'active'">Dashboard</a>
+        <a th:if="${!esAdmin}" th:href="@{/registrar-gasto}" th:classappend="${paginaActiva == 'registrar-gasto'} ? 'active'">Registrar Gasto</a>
+        <a th:href="@{/gastos}" th:classappend="${paginaActiva == 'gastos'} ? 'active'">Gastos</a>
+        <a th:if="${esAdmin}" th:href="@{/presupuesto}" th:classappend="${paginaActiva == 'presupuesto'} ? 'active'">Presupuesto</a>
+        <a th:if="${esAdmin}" th:href="@{/usuarios}" th:classappend="${paginaActiva == 'usuarios'} ? 'active'">Usuarios</a>
+    </nav>
+    <div style="display:flex;align-items:center;">
+        <span class="user-info" th:text="${username}"></span>
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit" class="btn-logout">Salir</button>
+        </form>
+    </div>
+</header>
+
+<main class="page">
+    <h1 class="page-title" th:text="${esAdmin} ? 'Gastos' : 'Mis Gastos'">Gastos</h1>
+
+    <div th:if="${exito}" class="msg ok show" th:text="${exito}"></div>
+    <div th:if="${error}" class="msg error show" th:text="${error}"></div>
+
+    <div class="card">
+        <div class="section-header">
+            <h2 th:text="${esAdmin} ? 'Lista de Gastos' : 'Mis Gastos Registrados'">Lista de Gastos</h2>
+            <a th:href="@{/gastos}" class="btn btn-secondary" style="font-size:.8rem; padding:.4rem .9rem;">↻ Actualizar</a>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Empleado</th>
+                        <th>Departamento</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th>Monto</th>
+                        <th>Estado</th>
+                        <th th:if="${esAdmin}">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(gastos)}">
+                        <td colspan="9" style="text-align:center; color:var(--texto-soft); padding:2rem;">
+                            Sin gastos registrados
+                        </td>
+                    </tr>
+                    <tr th:each="g : ${gastos}">
+                        <td style="font-family:monospace; color:var(--texto-soft);" th:text="${g.id}"></td>
+                        <td style="font-size:.85rem;" th:text="${g.fecha != null} ? ${#temporals.format(g.fecha, 'dd/MM/yyyy HH:mm')} : '—'"></td>
+                        <td th:text="${g.usuario != null} ? ${g.usuario.username} : '—'"></td>
+                        <td th:text="${g.usuario?.departamento != null} ? ${g.usuario.departamento.nombre} : '—'"></td>
+                        <td th:text="${g.descripcion} ?: '—'"></td>
+                        <td th:text="${g.categoria} ?: '—'"></td>
+                        <td style="font-family:monospace;" th:text="'S/. ' + ${#numbers.formatDecimal(g.monto, 1, 2)}"></td>
+                        <td>
+                            <span th:classappend="${g.estado == 'APROBADO'} ? 'badge-aprobado' : (${g.estado == 'RECHAZADO'} ? 'badge-rechazado' : 'badge-pendiente')"
+                                  class="badge" th:text="${g.estado} ?: 'PENDIENTE'"></span>
+                        </td>
+                        <td th:if="${esAdmin}">
+                            <div th:if="${g.estado == 'PENDIENTE'}" style="display:flex; gap:.4rem;">
+                                <form th:action="@{/gastos/{id}/aprobar(id=${g.id})}" method="post" style="margin:0;">
+                                    <button type="submit" class="btn btn-success" style="font-size:.75rem; padding:.3rem .7rem;">✓ Aprobar</button>
+                                </form>
+                                <form th:action="@{/gastos/{id}/rechazar(id=${g.id})}" method="post" style="margin:0;">
+                                    <button type="submit" class="btn btn-danger" style="font-size:.75rem; padding:.3rem .7rem;">✗ Rechazar</button>
+                                </form>
+                            </div>
+                            <span th:unless="${g.estado == 'PENDIENTE'}" style="color:var(--texto-soft); font-size:.85rem;">—</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

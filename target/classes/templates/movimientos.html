@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimientos — Caja Chica</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<header class="navbar">
+    <span class="brand">💰 Caja Chica</span>
+    <nav>
+        <a th:href="@{/dashboard}" th:classappend="${paginaActiva == 'dashboard'} ? 'active'">Dashboard</a>
+        <a th:if="${!esAdmin}" th:href="@{/registrar-gasto}">Registrar Gasto</a>
+        <a th:href="@{/gastos}" th:classappend="${paginaActiva == 'gastos'} ? 'active'">Gastos</a>
+        <a th:href="@{/movimientos}" th:classappend="${paginaActiva == 'movimientos'} ? 'active'">Movimientos</a>
+        <a th:if="${esAdmin}" th:href="@{/presupuesto}">Presupuesto</a>
+        <a th:if="${esAdmin}" th:href="@{/usuarios}">Usuarios</a>
+    </nav>
+    <div style="display:flex;align-items:center;">
+        <span class="user-info" th:text="${username}"></span>
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit" class="btn-logout">Salir</button>
+        </form>
+    </div>
+</header>
+
+<main class="page">
+    <h1 class="page-title">Movimientos de Caja</h1>
+
+    <div th:if="${exito}" class="msg ok show" th:text="${exito}"></div>
+    <div th:if="${error}" class="msg error show" th:text="${error}"></div>
+
+    <!-- Registrar Movimiento (solo ADMIN) -->
+    <div class="card" th:if="${esAdmin}">
+        <div class="section-header">
+            <h2>Registrar Movimiento</h2>
+        </div>
+        <form th:action="@{/movimientos/registrar}" method="post">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="cajaId">Caja</label>
+                    <select id="cajaId" name="cajaId" required>
+                        <option value="">Selecciona caja...</option>
+                        <option th:each="c : ${cajas}"
+                                th:value="${c.id}"
+                                th:text="'Caja #' + ${c.id} + ' - ' + (${c.departamento != null} ? ${c.departamento.nombre} : 'Sin departamento')"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tipo">Tipo</label>
+                    <select id="tipo" name="tipo" required>
+                        <option value="INGRESO">Ingreso</option>
+                        <option value="EGRESO">Egreso</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="monto">Monto (S/.)</label>
+                    <input type="number" id="monto" name="monto"
+                           placeholder="0.00" min="0.01" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="descripcion">Descripción</label>
+                    <input type="text" id="descripcion" name="descripcion"
+                           placeholder="Ej: Reembolso, venta, etc." required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">+ Registrar Movimiento</button>
+        </form>
+    </div>
+
+    <!-- Historial -->
+    <div class="card">
+        <div class="section-header">
+            <h2>Historial de Movimientos</h2>
+            <a th:href="@{/movimientos}" class="btn btn-secondary" style="font-size:.8rem; padding:.4rem .9rem;">↻ Actualizar</a>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Monto</th>
+                        <th>Descripción</th>
+                        <th>Caja / Departamento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(movimientos)}">
+                        <td colspan="6" style="text-align:center; color:var(--texto-soft); padding:2rem;">
+                            No hay movimientos registrados
+                        </td>
+                    </tr>
+                    <tr th:each="m : ${movimientos}">
+                        <td style="font-family:monospace;" th:text="'#' + ${m.id}"></td>
+                        <td th:text="${m.fecha != null} ? ${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')} : '—'"></td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${m.tipo == 'INGRESO'} ? 'badge-aprobado' : 'badge-rechazado'"
+                                  th:text="${m.tipo}"></span>
+                        </td>
+                        <td style="font-weight:600;"
+                            th:style="${m.tipo == 'INGRESO'} ? 'color:var(--verde); font-family:monospace;' : 'color:var(--rojo); font-family:monospace;'"
+                            th:text="'S/. ' + ${#numbers.formatDecimal(m.monto, 1, 2)}"></td>
+                        <td th:text="${m.descripcion}"></td>
+                        <td th:text="${m.cajaChica?.departamento != null} ? ${m.cajaChica.departamento.nombre} : '—'"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Caja Chica</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<header class="navbar">
+    <span class="brand">💰 Caja Chica</span>
+    <nav>
+        <a th:href="@{/dashboard}" th:classappend="${paginaActiva == 'dashboard'} ? 'active'">Dashboard</a>
+        <a th:if="${!esAdmin}" th:href="@{/registrar-gasto}" th:classappend="${paginaActiva == 'registrar-gasto'} ? 'active'">Registrar Gasto</a>
+        <a th:href="@{/gastos}" th:classappend="${paginaActiva == 'gastos'} ? 'active'">Gastos</a>
+        <a th:if="${esAdmin}" th:href="@{/presupuesto}" th:classappend="${paginaActiva == 'presupuesto'} ? 'active'">Presupuesto</a>
+        <a th:if="${esAdmin}" th:href="@{/usuarios}" th:classappend="${paginaActiva == 'usuarios'} ? 'active'">Usuarios</a>
+    </nav>
+    <div style="display:flex;align-items:center;">
+        <span class="user-info" th:text="${username}"></span>
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit" class="btn-logout">Salir</button>
+        </form>
+    </div>
+</header>
+
+<main class="page">
+    <h1 class="page-title">Dashboard</h1>
+
+    <div th:if="${exito}" class="msg ok show" th:text="${exito}"></div>
+    <div th:if="${error}" class="msg error show" th:text="${error}"></div>
+
+    <!-- Estadísticas -->
+    <div class="cards-grid">
+        <div class="card stat-card">
+            <div class="label">Cajas registradas</div>
+            <div class="value azul" th:text="${totalCajas}">—</div>
+        </div>
+        <div class="card stat-card" th:if="${esAdmin}">
+            <div class="label">Total gastos</div>
+            <div class="value amarillo" th:text="${totalGastos}">—</div>
+        </div>
+        <div class="card stat-card" th:if="${esAdmin}">
+            <div class="label">Gastos pendientes</div>
+            <div class="value rojo" th:text="${totalPendientes}">—</div>
+        </div>
+        <div class="card stat-card">
+            <div class="label" th:text="${esAdmin} ? 'Saldo total' : 'Saldo de tu caja'">Saldo disponible</div>
+            <div class="value verde" th:text="'S/. ' + ${#numbers.formatDecimal(saldoTotal, 1, 2)}">—</div>
+        </div>
+    </div>
+
+    <!-- Formulario crear caja (solo ADMIN) -->
+    <div class="card" th:if="${esAdmin}">
+        <div class="section-header">
+            <h2>Nueva Caja Chica</h2>
+        </div>
+        <form th:action="@{/dashboard/crear-caja}" method="post">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="deptoId">Departamento</label>
+                    <select id="deptoId" name="deptoId" required>
+                        <option value="">Selecciona departamento</option>
+                        <option th:each="d : ${departamentos}"
+                                th:value="${d.id}"
+                                th:text="${d.nombre}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="montoInicial">Monto Inicial (S/.)</label>
+                    <input type="number" id="montoInicial" name="montoInicial"
+                           placeholder="Ej: 500.00" min="0.01" step="0.01" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">+ Crear Caja</button>
+        </form>
+    </div>
+
+    <!-- Tabla de cajas -->
+    <div class="card">
+        <div class="section-header">
+            <h2 th:text="${esAdmin} ? 'Cajas Registradas' : ('Caja — ' + ${deptoNombre})">Cajas</h2>
+            <a th:href="@{/dashboard}" class="btn btn-secondary" style="font-size:.8rem; padding:.4rem .9rem;">↻ Actualizar</a>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Departamento</th>
+                        <th>Monto Inicial</th>
+                        <th>Saldo Actual</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(cajas)}">
+                        <td colspan="5" style="text-align:center; color:var(--texto-soft); padding:2rem;">
+                            No hay cajas registradas
+                        </td>
+                    </tr>
+                    <tr th:each="c : ${cajas}">
+                        <td style="font-family:monospace;" th:text="'#' + ${c.id}"></td>
+                        <td th:text="${c.departamento != null} ? ${c.departamento.nombre} : '—'"></td>
+                        <td th:text="'S/. ' + ${#numbers.formatDecimal(c.montoInicial, 1, 2)}"></td>
+                        <td th:text="'S/. ' + ${#numbers.formatDecimal(c.saldoActual, 1, 2)}"></td>
+                        <td>
+                            <span th:if="${c.saldoActual != null and c.saldoActual.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                                  class="badge badge-aprobado">Activa</span>
+                            <span th:unless="${c.saldoActual != null and c.saldoActual.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                                  class="badge badge-rechazado">Sin saldo</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>
