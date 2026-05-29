@@ -30,7 +30,6 @@
     <div th:if="${exito}" class="msg ok show" th:text="${exito}"></div>
     <div th:if="${error}" class="msg error show" th:text="${error}"></div>
 
-    <!-- Formulario registrar usuario -->
     <div class="card">
         <div class="section-header">
             <h2>Registrar Usuario</h2>
@@ -64,7 +63,6 @@
         </form>
     </div>
 
-    <!-- Modal editar usuario -->
     <div id="modalEditar" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
         <div class="card" style="width:100%; max-width:500px; margin:1rem;">
             <div class="section-header">
@@ -104,7 +102,6 @@
         </div>
     </div>
 
-    <!-- Tabla usuarios -->
     <div class="card">
         <div class="section-header">
             <h2>Usuarios Registrados</h2>
@@ -171,7 +168,6 @@ function cerrarModal() {
     document.getElementById('modalEditar').style.display = 'none';
 }
 
-// Cerrar al hacer click fuera del modal
 document.getElementById('modalEditar').addEventListener('click', function(e) {
     if (e.target === this) cerrarModal();
 });
