@@ -4,6 +4,7 @@ import com.example.caja_chica.model.Usuario;
 import com.example.caja_chica.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,7 @@ public class UsuarioService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    @Transactional
     public Usuario registrarUsuario(Usuario usuario) {
         Optional<Usuario> existente = usuarioRepository.findByUsername(usuario.getUsername());
         if (existente.isPresent()) {
@@ -45,6 +47,7 @@ public class UsuarioService {
         return usuarioRepository.findByUsername(username);
     }
 
+    @Transactional
     public Usuario actualizarUsuario(Long id, Usuario datosNuevos) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -68,6 +71,7 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    @Transactional
     public void eliminarUsuario(Long id) {
         if (!usuarioRepository.existsById(id)) {
             throw new RuntimeException("Usuario no encontrado");

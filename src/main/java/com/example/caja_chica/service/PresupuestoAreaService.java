@@ -7,6 +7,7 @@ import com.example.caja_chica.repository.PresupuestoAreaRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -20,6 +21,7 @@ public class PresupuestoAreaService {
     @Autowired
     private DepartamentoRepository departamentoRepository;
 
+    @Transactional
     public Departamento crearDepartamento(String nombre) {
 
         Departamento departamento = new Departamento();
@@ -28,6 +30,7 @@ public class PresupuestoAreaService {
         return departamentoRepository.save(departamento);
     }
 
+    @Transactional
     public PresupuestoArea crearPresupuesto(
             Long departamentoId,
             String mes,
@@ -47,6 +50,7 @@ public class PresupuestoAreaService {
         return presupuestoRepository.save(presupuesto);
     }
 
+    @Transactional
     public PresupuestoArea registrarConsumo(
             Long presupuestoId,
             BigDecimal monto

@@ -32,7 +32,6 @@
     <div th:if="${exito}" class="msg ok show" th:text="${exito}"></div>
     <div th:if="${error}" class="msg error show" th:text="${error}"></div>
 
-    <!-- Registrar Movimiento (solo ADMIN) -->
     <div class="card" th:if="${esAdmin}">
         <div class="section-header">
             <h2>Registrar Movimiento</h2>
@@ -70,7 +69,6 @@
         </form>
     </div>
 
-    <!-- Historial -->
     <div class="card">
         <div class="section-header">
             <h2>Historial de Movimientos</h2>

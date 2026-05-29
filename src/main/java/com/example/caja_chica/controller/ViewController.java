@@ -29,8 +29,6 @@ public class ViewController {
     @Autowired private CajaChicaRepository cajaChicaRepository;
     @Autowired private MovimientoRepository movimientoRepository;
 
-    // ─── Helpers ───────────────────────────────────────────────────────────────
-
     private boolean esAdmin(Authentication auth) {
         return auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
@@ -46,8 +44,6 @@ public class ViewController {
         model.addAttribute("paginaActiva", paginaActiva);
     }
 
-    // ─── Login ─────────────────────────────────────────────────────────────────
-
     @GetMapping({"/", "/login"})
     public String login(@RequestParam(required = false) String error,
                         @RequestParam(required = false) String logout,
@@ -56,8 +52,6 @@ public class ViewController {
         if (logout != null) model.addAttribute("logout", "Sesión cerrada correctamente.");
         return "login";
     }
-
-    // ─── Dashboard ─────────────────────────────────────────────────────────────
 
     @GetMapping("/dashboard")
     public String dashboard(Model model, Authentication auth) {
@@ -103,8 +97,6 @@ public class ViewController {
         return "redirect:/dashboard";
     }
 
-    // ─── Gastos ────────────────────────────────────────────────────────────────
-
     @GetMapping("/gastos")
     public String gastos(Model model, Authentication auth) {
         addNavModel(model, auth, "gastos");
@@ -140,8 +132,6 @@ public class ViewController {
         }
         return "redirect:/gastos";
     }
-
-    // ─── Registrar Gasto ───────────────────────────────────────────────────────
 
     @GetMapping("/registrar-gasto")
     public String registrarGastoForm(Model model, Authentication auth) {
@@ -190,7 +180,6 @@ public class ViewController {
             gasto.setDescripcion(descripcion);
             Gasto guardado = gastoService.registrarGasto(gasto, cajaId, presupuestoId, auth.getName());
 
-            // Subir comprobante si se adjuntó archivo
             if (archivo != null && !archivo.isEmpty()) {
                 String tipo = archivo.getContentType();
                 if (tipo != null && (tipo.equals("image/jpeg") || tipo.equals("image/png") || tipo.equals("application/pdf"))) {
@@ -213,7 +202,6 @@ public class ViewController {
         return "redirect:/registrar-gasto";
     }
 
-    // ─── Presupuesto ───────────────────────────────────────────────────────────
 
     @GetMapping("/presupuesto")
     public String presupuesto(Model model, Authentication auth) {
@@ -247,8 +235,6 @@ public class ViewController {
         }
         return "redirect:/presupuesto";
     }
-
-    // ─── Usuarios ──────────────────────────────────────────────────────────────
 
     @GetMapping("/usuarios")
     public String usuarios(Model model, Authentication auth) {
@@ -320,8 +306,6 @@ public class ViewController {
         }
         return "redirect:/usuarios";
     }
-
-    // ─── Movimientos ───────────────────────────────────────────────────────────
 
     @GetMapping("/movimientos")
     public String movimientos(Model model, Authentication auth) {

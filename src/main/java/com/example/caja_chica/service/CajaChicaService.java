@@ -6,6 +6,7 @@ import com.example.caja_chica.model.Departamento;
 import com.example.caja_chica.repository.DepartamentoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class CajaChicaService {
     @Autowired
     private DepartamentoRepository departamentoRepository;
 
+    @Transactional
     public CajaChica crearCaja(BigDecimal montoInicial, Long departamentoId) {
         if (montoInicial == null) {
             throw new RuntimeException("El monto inicial es obligatorio");
@@ -45,6 +47,7 @@ public class CajaChicaService {
                 .orElseThrow(() -> new RuntimeException("Caja chica no encontrada"));
     }
 
+    @Transactional
     public CajaChica actualizarCaja(Long id, BigDecimal nuevoMonto) {
         CajaChica caja = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Caja chica no encontrada"));
@@ -59,6 +62,7 @@ public class CajaChicaService {
         return repository.save(caja);
     }
 
+    @Transactional
     public void eliminarCaja(Long id) {
         if (!repository.existsById(id)) {
             throw new RuntimeException("Caja chica no encontrada");

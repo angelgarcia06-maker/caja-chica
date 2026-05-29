@@ -11,6 +11,7 @@ import com.example.caja_chica.repository.PresupuestoAreaRepository;
 import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class GastoService {
     @Autowired
     private PresupuestoAreaRepository presupuestoAreaRepository;
 
+    @Transactional
     public Gasto registrarGasto(Gasto gasto, Long cajaId, Long presupuestoId, String username) {
         CajaChica caja = cajaChicaRepository.findById(cajaId)
                 .orElseThrow(() -> new RuntimeException("Caja chica no encontrada"));
@@ -48,6 +50,7 @@ public class GastoService {
         return gastoRepository.save(gasto);
     }
 
+    @Transactional
     public Gasto aprobarGasto(Long gastoId) {
         Gasto gasto = gastoRepository.findById(gastoId)
                 .orElseThrow(() -> new RuntimeException("Gasto no encontrado"));
@@ -76,6 +79,7 @@ public class GastoService {
         return gastoRepository.save(gasto);
     }
 
+    @Transactional
     public Gasto rechazarGasto(Long gastoId) {
         Gasto gasto = gastoRepository.findById(gastoId)
                 .orElseThrow(() -> new RuntimeException("Gasto no encontrado"));
@@ -104,6 +108,7 @@ public class GastoService {
         return gastoRepository.findByCategoria(categoria.toUpperCase());
     }
 
+    @Transactional
     public Gasto agregarComprobante(Long gastoId, String rutaComprobante) {
         Gasto gasto = gastoRepository.findById(gastoId)
                 .orElseThrow(() -> new RuntimeException("Gasto no encontrado"));

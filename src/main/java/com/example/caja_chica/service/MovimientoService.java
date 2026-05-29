@@ -6,6 +6,7 @@ import com.example.caja_chica.repository.CajaChicaRepository;
 import com.example.caja_chica.repository.MovimientoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ public class MovimientoService {
     @Autowired
     private CajaChicaRepository cajaChicaRepository;
 
+    @Transactional
     public Movimiento registrarMovimiento(Long cajaId, String tipo, BigDecimal monto, String descripcion) {
         CajaChica caja = cajaChicaRepository.findById(cajaId)
                 .orElseThrow(() -> new RuntimeException("Caja chica no encontrada"));
