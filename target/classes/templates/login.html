@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión — Caja Chica</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="login-wrap">
+    <div class="login-box">
+
+        <div class="logo">
+            💰 Caja <span>Chica</span>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom:1.5rem; font-size:1.1rem; color:var(--gris-900);">
+                Iniciar Sesión
+            </h2>
+
+            <div th:if="${error}" class="msg error show" th:text="${error}"></div>
+            <div th:if="${logout}" class="msg ok show" th:text="${logout}"></div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" name="username"
+                           placeholder="Ingresa tu usuario" autocomplete="username" required>
+                </div>
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password"
+                           placeholder="••••••••" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+                    Ingresar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

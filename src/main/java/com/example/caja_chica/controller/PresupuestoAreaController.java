@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/presupuesto")
+@RequestMapping("/api/presupuesto")
 public class PresupuestoAreaController {
 
     @Autowired
