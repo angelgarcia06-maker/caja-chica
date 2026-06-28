@@ -23,6 +23,7 @@ public class ViewController {
     @Autowired private UsuarioService usuarioService;
     @Autowired private PresupuestoAreaService presupuestoAreaService;
     @Autowired private MovimientoService movimientoService;
+    @Autowired private NotificacionService notificacionService;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private DepartamentoRepository departamentoRepository;
     @Autowired private PresupuestoAreaRepository presupuestoAreaRepository;
@@ -39,9 +40,12 @@ public class ViewController {
 
     private void addNavModel(Model model, Authentication auth, String paginaActiva) {
         boolean admin = esAdmin(auth);
+        Usuario usuario = getUsuarioActual(auth);
+        long noLeidas = notificacionService.contarNoLeidas(usuario.getId());
         model.addAttribute("username", auth.getName());
         model.addAttribute("esAdmin", admin);
         model.addAttribute("paginaActiva", paginaActiva);
+        model.addAttribute("notificacionesNoLeidas", noLeidas);
     }
 
     @GetMapping({"/", "/login"})
@@ -305,6 +309,36 @@ public class ViewController {
             ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/usuarios";
+    }
+
+    @GetMapping("/notificaciones")
+    public String notificaciones(Model model, Authentication auth) {
+        addNavModel(model, auth, "notificaciones");
+        Usuario usuario = getUsuarioActual(auth);
+        model.addAttribute("notificaciones", notificacionService.listarPorUsuario(usuario.getId()));
+        return "notificaciones";
+    }
+
+    @PostMapping("/notificaciones/{id}/leer")
+    public String marcarLeida(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            notificacionService.marcarComoLeida(id);
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/notificaciones";
+    }
+
+    @PostMapping("/notificaciones/leer-todas")
+    public String marcarTodasLeidas(Authentication auth, RedirectAttributes ra) {
+        try {
+            Usuario usuario = getUsuarioActual(auth);
+            notificacionService.marcarTodasComoLeidas(usuario.getId());
+            ra.addFlashAttribute("exito", "Todas las notificaciones fueron marcadas como leídas.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/notificaciones";
     }
 
     @GetMapping("/movimientos")

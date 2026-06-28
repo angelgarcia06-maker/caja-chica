@@ -30,6 +30,9 @@ public class GastoService {
     @Autowired
     private PresupuestoAreaRepository presupuestoAreaRepository;
 
+    @Autowired
+    private NotificacionService notificacionService;
+
     @Transactional
     public Gasto registrarGasto(Gasto gasto, Long cajaId, Long presupuestoId, String username) {
         CajaChica caja = cajaChicaRepository.findById(cajaId)
@@ -47,7 +50,9 @@ public class GastoService {
         gasto.setUsuario(usuario);
         gasto.setPresupuestoArea(presupuesto);
 
-        return gastoRepository.save(gasto);
+        Gasto guardado = gastoRepository.save(gasto);
+        notificacionService.notificarGastoPendiente(guardado);
+        return guardado;
     }
 
     @Transactional
@@ -76,7 +81,16 @@ public class GastoService {
         presupuestoAreaRepository.save(presupuesto);
 
         gasto.setEstado("APROBADO");
-        return gastoRepository.save(gasto);
+        Gasto aprobado = gastoRepository.save(gasto);
+        notificacionService.notificarAprobacion(aprobado);
+
+        BigDecimal limite = presupuesto.getPresupuestoMensual()
+            .multiply(new BigDecimal("0.80"));
+        if (presupuesto.getConsumoActual().compareTo(limite) >= 0) {
+            notificacionService.notificarPresupuestoAgotado(presupuesto);
+        }
+
+        return aprobado;
     }
 
     @Transactional
@@ -89,7 +103,9 @@ public class GastoService {
         }
 
         gasto.setEstado("RECHAZADO");
-        return gastoRepository.save(gasto);
+        Gasto rechazado = gastoRepository.save(gasto);
+        notificacionService.notificarRechazo(rechazado);
+        return rechazado;
     }
 
     public List<Gasto> listarTodos() {
